@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -294,6 +293,11 @@
                         <a href="#toc-cong-cu-lam" class="scroll-to-top text-sm mt-4 block">Quay về Mục lục</a>
                     </div>
 
+                    <!-- Server Status Indicator -->
+                    <div id="serverStatus" class="p-3 mt-4 text-center rounded-md text-sm font-semibold">
+                        <!-- Status will be updated by JavaScript -->
+                    </div>
+
                     <div id="cong-cu-lam-actions-output" class="alternating-bg p-6 rounded-lg hidden">
                         <h3 class="text-2xl font-bold text-orange-primary mb-4">2. Các Hành động đề xuất</h3>
                         <p class="mb-4">
@@ -336,7 +340,7 @@
                         <h3 class="text-2xl font-bold text-orange-primary mb-4">1. Công ty Cổ phần TechSolutions</h3>
                         <p class="mb-4 text-lg font-semibold text-dark-blue-2">Bối cảnh:</p>
                         <p class="mb-4">
-                            **TechSolutions** là một công ty công nghệ phát triển nhanh với hơn <span class="highlight-text-orange">300 nhân sự</span>, chuyên về phát triển phần mềm AI và Big Data. Công ty đang đối mặt với thách thức lớn trong việc tuyển dụng các vị trí kỹ sư AI cấp cao, với <span class="highlight-text-orange">tỷ lệ tuyển dụng thành công chỉ 15%</span> và thời gian tuyển dụng trung bình là <span class="highlight-text-orange">90 ngày</span>, cao hơn nhiều so với mục tiêu 45 ngày. Nguyên nhân chính được xác định là do mô tả công việc (JD) thiếu rõ ràng và tiêu chí đánh giá ứng viên không nhất quán.
+                            **TechSolutions** là một công ty công nghệ phát triển nhanh với hơn <span class="highlight-text-orange">300 nhân sự</span>, chuyên về phát triển phần mềm AI và Big Data. Công ty đang đối mặt với thách thách lớn trong việc tuyển dụng các vị trí kỹ sư AI cấp cao, với <span class="highlight-text-orange">tỷ lệ tuyển dụng thành công chỉ 15%</span> và thời gian tuyển dụng trung bình là <span class="highlight-text-orange">90 ngày</span>, cao hơn nhiều so với mục tiêu 45 ngày. Nguyên nhân chính được xác định là do mô tả công việc (JD) thiếu rõ ràng và tiêu chí đánh giá ứng viên không nhất quán.
                         </p>
 
                         <p class="mb-4 text-lg font-semibold text-dark-blue-2">Các bước áp dụng quy trình KSAO:</p>
@@ -580,6 +584,7 @@
     </div>
 
     <script>
+        // JavaScript trong index.html
         document.addEventListener('DOMContentLoaded', () => {
             const tabButtons = document.querySelectorAll('.tab-button');
             const tabContents = document.querySelectorAll('.tab-content');
@@ -588,6 +593,7 @@
                 'cong-cu-lam': document.getElementById('toc-cong-cu-lam'),
                 'minh-hoa-cong-ty': document.getElementById('toc-minh-hoa-cong-ty')
             };
+            const serverStatusDiv = document.getElementById('serverStatus'); // New element for server status
 
             // Hàm tạo Mục lục cho một tab cụ thể
             function generateTOC(tabId) {
@@ -640,7 +646,34 @@
 
                 // Tạo Mục lục cho tab vừa được kích hoạt
                 generateTOC(tabId);
+
+                // Check backend status when "Công cụ để làm" tab is shown
+                if (tabId === 'cong-cu-lam') {
+                    checkBackendStatus();
+                }
             }
+
+            // Function to check backend server status
+            async function checkBackendStatus() {
+                serverStatusDiv.textContent = 'Đang kiểm tra kết nối server...';
+                serverStatusDiv.className = 'p-3 mt-4 text-center rounded-md text-sm font-semibold bg-gray-200 text-gray-700'; // Default styling
+
+                try {
+                    const response = await fetch('http://localhost:3000/api/status'); // New endpoint for status check
+                    if (response.ok) {
+                        serverStatusDiv.textContent = 'Server Backend: Đã kết nối';
+                        serverStatusDiv.className = 'p-3 mt-4 text-center rounded-md text-sm font-semibold bg-green-100 text-green-700';
+                    } else {
+                        serverStatusDiv.textContent = 'Server Backend: Lỗi kết nối. Vui lòng đảm bảo server đang chạy trên http://localhost:3000';
+                        serverStatusDiv.className = 'p-3 mt-4 text-center rounded-md text-sm font-semibold bg-red-100 text-red-700';
+                    }
+                } catch (error) {
+                    serverStatusDiv.textContent = 'Server Backend: Lỗi kết nối. Vui lòng đảm bảo server đang chạy trên http://localhost:3000';
+                    serverStatusDiv.className = 'p-3 mt-4 text-center rounded-md text-sm font-semibold bg-red-100 text-red-700';
+                    console.error('Lỗi khi kiểm tra trạng thái server:', error);
+                }
+            }
+
 
             // Thêm sự kiện click cho các nút tab
             tabButtons.forEach(button => {
@@ -680,99 +713,63 @@
                 }
             }
 
-            // Gọi API Gemini để bóc tách nhiệm vụ
+            // Gọi API Backend để bóc tách nhiệm vụ
             async function decomposeTaskWithAI(task) {
                 setLoadingState(decomposeTaskBtn, decomposeBtnText, decomposeSpinner, true);
                 actionsContainer.innerHTML = ''; // Clear previous actions
                 actionsOutputSection.classList.add('hidden'); // Hide section during loading
 
-                const prompt = `Phân tích nhiệm vụ sau và liệt kê các hành động cụ thể cần thiết để hoàn thành nhiệm vụ đó. Trả lời dưới dạng một mảng JSON các chuỗi (strings). Ví dụ: ["Hành động 1", "Hành động 2"]. Nhiệm vụ: "${task}"`;
-                let chatHistory = [];
-                chatHistory.push({ role: "user", parts: [{ text: prompt }] });
-                const payload = {
-                    contents: chatHistory,
-                    generationConfig: {
-                        responseMimeType: "application/json",
-                        responseSchema: {
-                            type: "ARRAY",
-                            items: { "type": "STRING" }
-                        }
-                    }
-                };
-                const apiKey = ""; // Canvas sẽ tự động cung cấp API key
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
-
                 try {
-                    const response = await fetch(apiUrl, {
+                    const response = await fetch('http://localhost:3000/api/decompose-task', { // Gọi backend server
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
+                        body: JSON.stringify({ task: task })
                     });
-                    const result = await response.json();
+                    const actions = await response.json();
 
-                    if (result.candidates && result.candidates.length > 0 &&
-                        result.candidates[0].content && result.candidates[0].content.parts &&
-                        result.candidates[0].content.parts.length > 0) {
-                        const jsonString = result.candidates[0].content.parts[0].text;
-                        const actions = JSON.parse(jsonString);
+                    if (response.ok) { // Kiểm tra nếu phản hồi thành công (status 2xx)
                         return actions;
                     } else {
-                        console.error('API response structure unexpected:', result);
+                        console.error('Lỗi từ backend:', actions.error);
+                        serverStatusDiv.textContent = `Server Backend: Lỗi (${actions.error}). Vui lòng kiểm tra console.`;
+                        serverStatusDiv.className = 'p-3 mt-4 text-center rounded-md text-sm font-semibold bg-red-100 text-red-700';
                         return ['Không thể bóc tách nhiệm vụ. Vui lòng thử lại hoặc nhập thủ công.'];
                     }
                 } catch (error) {
-                    console.error('Lỗi khi gọi API Gemini:', error);
-                    return ['Đã xảy ra lỗi khi kết nối với AI. Vui lòng thử lại.'];
+                    console.error('Lỗi khi gọi backend để bóc tách nhiệm vụ: ', error);
+                    console.error('Vui lòng đảm bảo server Node.js đang chạy trên http://localhost:3000');
+                    serverStatusDiv.textContent = 'Server Backend: Lỗi kết nối. Vui lòng đảm bảo server đang chạy trên http://localhost:3000';
+                    serverStatusDiv.className = 'p-3 mt-4 text-center rounded-md text-sm font-semibold bg-red-100 text-red-700';
+                    return ['Đã xảy ra lỗi khi kết nối với server. Vui lòng đảm bảo server đang chạy.'];
                 } finally {
                     setLoadingState(decomposeTaskBtn, decomposeBtnText, decomposeSpinner, false);
                 }
             }
 
-            // Gọi API Gemini để đề xuất KSAO
+            // Gọi API Backend để đề xuất KSAO
             async function suggestKSAOWithAI(action) {
-                const prompt = `Đề xuất Kiến thức (K), Kỹ năng (S), Khả năng (A), và Yếu tố khác (O) cần thiết để thực hiện hành động sau. Trả lời dưới dạng JSON object với các khóa 'K', 'S', 'A', 'O', mỗi khóa chứa một mảng chuỗi (strings). Ví dụ: {"K": ["Kiến thức X"], "S": ["Kỹ năng Y"], "A": ["Khả năng Z"], "O": ["Yếu tố W"]}. Hành động: "${action}"`;
-                let chatHistory = [];
-                chatHistory.push({ role: "user", parts: [{ text: prompt }] });
-                const payload = {
-                    contents: chatHistory,
-                    generationConfig: {
-                        responseMimeType: "application/json",
-                        responseSchema: {
-                            type: "OBJECT",
-                            properties: {
-                                "K": { "type": "ARRAY", "items": { "type": "STRING" } },
-                                "S": { "type": "ARRAY", "items": { "type": "STRING" } },
-                                "A": { "type": "ARRAY", "items": { "type": "STRING" } },
-                                "O": { "type": "ARRAY", "items": { "type": "STRING" } }
-                            },
-                            "propertyOrdering": ["K", "S", "A", "O"]
-                        }
-                    }
-                };
-                const apiKey = ""; // Canvas sẽ tự động cung cấp API key
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
-
                 try {
-                    const response = await fetch(apiUrl, {
+                    const response = await fetch('http://localhost:3000/api/suggest-ksao', { // Gọi backend server
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
+                        body: JSON.stringify({ action: action })
                     });
-                    const result = await response.json();
+                    const ksao = await response.json();
 
-                    if (result.candidates && result.candidates.length > 0 &&
-                        result.candidates[0].content && result.candidates[0].content.parts &&
-                        result.candidates[0].content.parts.length > 0) {
-                        const jsonString = result.candidates[0].content.parts[0].text;
-                        const ksao = JSON.parse(jsonString);
+                    if (response.ok) { // Kiểm tra nếu phản hồi thành công (status 2xx)
                         return ksao;
                     } else {
-                        console.error('API response structure unexpected:', result);
+                        console.error('Lỗi từ backend:', ksao.error);
+                        serverStatusDiv.textContent = `Server Backend: Lỗi (${ksao.error}). Vui lòng kiểm tra console.`;
+                        serverStatusDiv.className = 'p-3 mt-4 text-center rounded-md text-sm font-semibold bg-red-100 text-red-700';
                         return { K: ['Không thể đề xuất KSAO.'], S: [], A: [], O: [] };
                     }
                 } catch (error) {
-                    console.error('Lỗi khi gọi API Gemini:', error);
-                    return { K: ['Đã xảy ra lỗi khi kết nối với AI.'], S: [], A: [], O: [] };
+                    console.error('Lỗi khi gọi backend để đề xuất KSAO: ', error);
+                    console.error('Vui lòng đảm bảo server Node.js đang chạy trên http://localhost:3000');
+                    serverStatusDiv.textContent = 'Server Backend: Lỗi kết nối. Vui lòng đảm bảo server đang chạy trên http://localhost:3000';
+                    serverStatusDiv.className = 'p-3 mt-4 text-center rounded-md text-sm font-semibold bg-red-100 text-red-700';
+                    return { K: ['Đã xảy ra lỗi khi kết nối với server. Vui lòng đảm bảo server đang chạy.'], S: [], A: [], O: [] };
                 }
             }
 
@@ -899,7 +896,6 @@
 
                 } else {
                     console.log('Vui lòng chọn ít nhất một hành động để đề xuất KSAO.');
-                    // Có thể thêm một thông báo tùy chỉnh trên UI nếu cần
                 }
             });
 
@@ -926,932 +922,3 @@
     </script>
 </body>
 </html>
-=======
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Công cụ KSAO</title>
-    <!-- Google Fonts: Oswald -->
-    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@200..700&display=swap" rel="stylesheet">
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        /* Thiết lập font cho toàn bộ body */
-        body {
-            font-family: 'Oswald', sans-serif;
-            background-color: #f0f2f5; /* Nền xám nhạt */
-            color: #333;
-        }
-
-        /* Định nghĩa màu sắc tùy chỉnh cho Tailwind CSS */
-        :root {
-            --color-orange: #FF9800;
-            --color-green: #009688;
-            --color-dark-blue-1: #5C6BC0;
-            --color-dark-blue-2: #1a237e;
-        }
-        .bg-orange-primary { background-color: var(--color-orange); }
-        .text-orange-primary { color: var(--color-orange); }
-        .bg-green-primary { background-color: var(--color-green); }
-        .text-green-primary { color: var(--color-green); }
-        .bg-dark-blue-1 { background-color: var(--color-dark-blue-1); }
-        .text-dark-blue-1 { color: var(--color-dark-blue-1); }
-        .bg-dark-blue-2 { background-color: var(--color-dark-blue-2); }
-        .text-dark-blue-2 { color: var(--color-dark-blue-2); }
-
-        /* Kiểu cho nút tab khi hoạt động */
-        .tab-button.active {
-            background-color: var(--color-green); /* Nền xanh lá khi hoạt động */
-            color: white;
-            border-bottom: 4px solid var(--color-orange); /* Gạch chân màu cam */
-        }
-
-        /* Kiểu cho liên kết "Quay về Mục lục" */
-        .scroll-to-top {
-            cursor: pointer;
-            text-decoration: underline;
-            color: var(--color-dark-blue-1);
-            transition: color 0.2s ease-in-out;
-        }
-        .scroll-to-top:hover {
-            color: var(--color-orange);
-        }
-
-        /* Kiểu cho liên kết trong mục lục */
-        .toc-link {
-            cursor: pointer;
-            color: var(--color-dark-blue-1);
-            transition: color 0.2s ease-in-out;
-        }
-        .toc-link:hover {
-            color: var(--color-orange);
-        }
-
-        /* Đường phân cách nhẹ nhàng giữa các phần (nếu cần, hiện tại dùng padding/margin) */
-        .section-separator {
-            border-bottom: 1px dashed #ccc;
-            margin: 2rem 0;
-            padding-bottom: 1rem;
-        }
-
-        /* Nền màu xen kẽ cho các khối nội dung lớn */
-        .alternating-bg:nth-child(even) {
-            background-color: #e8eaf6; /* Màu xanh đậm nhạt nhất */
-        }
-        .alternating-bg:nth-child(odd) {
-            background-color: #ffffff;
-        }
-
-        /* Tô màu và làm đậm các từ khóa quan trọng */
-        .highlight-text-orange {
-            color: var(--color-orange);
-            font-weight: bold;
-        }
-        .highlight-text-green {
-            color: var(--color-green);
-            font-weight: bold;
-        }
-        /* Làm đậm kết quả tính toán */
-        .text-result {
-            color: var(--color-dark-blue-2);
-            font-weight: bold;
-        }
-        /* Kiểu cho thông báo "Đã lưu!" */
-        .save-feedback {
-            font-size: 0.75rem;
-            color: var(--color-green);
-            margin-left: 0.5rem;
-            opacity: 0;
-            transition: opacity 0.3s ease-in-out;
-        }
-        .save-feedback.show {
-            opacity: 1;
-        }
-        /* Kiểu cho spinner loading */
-        .spinner {
-            border: 4px solid rgba(0, 0, 0, 0.1);
-            border-left-color: var(--color-green);
-            border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            animation: spin 1s linear infinite;
-            display: inline-block;
-            vertical-align: middle;
-            margin-right: 8px;
-        }
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-    </style>
-</head>
-<body class="flex flex-col min-h-screen">
-    <div class="container mx-auto p-4 md:p-8 flex-grow">
-        <!-- Phần Header/Tiêu đề chính của ứng dụng -->
-        <header class="text-center mb-8">
-            <h1 class="text-4xl md:text-5xl font-bold text-dark-blue-2 mb-4">
-                Công cụ KSAO: Từ Nhiệm vụ đến Năng lực
-            </h1>
-            <p class="text-lg text-gray-600">
-                Xác định Kiến thức, Kỹ năng, Khả năng và Yếu tố khác một cách chuyên nghiệp.
-            </p>
-        </header>
-
-        <!-- Thanh điều hướng Tab -->
-        <nav class="flex justify-center bg-dark-blue-1 text-white rounded-t-lg shadow-lg mb-6">
-            <button class="tab-button py-4 px-6 md:px-10 text-lg font-semibold rounded-tl-lg transition-all duration-300 active" data-tab="kien-thuc">
-                Kiến thức
-            </button>
-            <button class="tab-button py-4 px-6 md:px-10 text-lg font-semibold transition-all duration-300" data-tab="cong-cu-lam">
-                Công cụ để làm
-            </button>
-            <button class="tab-button py-4 px-6 md:px-10 text-lg font-semibold rounded-tr-lg transition-all duration-300" data-tab="minh-hoa-cong-ty">
-                Minh hoạ Công ty
-            </button>
-        </nav>
-
-        <!-- Nội dung của các Tab -->
-        <main class="bg-white p-6 md:p-10 rounded-b-lg shadow-xl">
-            <!-- Tab 'Kiến thức' -->
-            <section id="kien-thuc" class="tab-content">
-                <h2 class="text-3xl font-bold text-dark-blue-1 mb-6">Kiến thức về KSAO</h2>
-                <div id="toc-kien-thuc" class="mb-8 p-4 bg-gray-100 rounded-lg shadow-inner">
-                    <h3 class="text-xl font-semibold text-dark-blue-2 mb-3">Mục lục</h3>
-                    <!-- Mục lục sẽ được tạo tự động bằng JavaScript -->
-                </div>
-
-                <div class="space-y-8">
-                    <div id="kien-thuc-intro" class="alternating-bg p-6 rounded-lg">
-                        <h3 class="text-2xl font-bold text-orange-primary mb-4">Giới thiệu về KSAO</h3>
-                        <p class="mb-4">
-                            Việc xác định **KSAO** không phải là phỏng đoán, mà là một quá trình suy luận logic dựa trên các nhiệm vụ công việc đã được thu thập. **Nguyên tắc cốt lõi** là: Với mỗi nhiệm vụ, hãy tự hỏi <span class="highlight-text-orange">"Để thực hiện thành công nhiệm vụ này, một người cần phải BIẾT gì (Kiến thức), LÀM ĐƯỢC gì (Kỹ năng), và LÀ người như thế nào (Khả năng/Yếu tố khác)?"</span>
-                        </p>
-                        <p>
-                            Quy trình dưới đây sẽ giúp bạn xây dựng một hồ sơ KSAO hoàn chỉnh và chính xác, áp dụng tư duy từ các cấp độ của Bloom's Taxonomy để đảm bảo sự toàn diện.
-                        </p>
-                        <a href="#toc-kien-thuc" class="scroll-to-top text-sm">Quay về Mục lục</a>
-                    </div>
-
-                    <div id="kien-thuc-b1" class="alternating-bg p-6 rounded-lg">
-                        <h3 class="text-2xl font-bold text-orange-primary mb-4">Bước 1: Liệt kê các Nhiệm vụ Cốt lõi (Tasks)</h3>
-                        <p class="mb-4">
-                            Bắt đầu bằng cách liệt kê ra <span class="highlight-text-green">**5-7 nhiệm vụ hoặc trách nhiệm chính**</span> của vị trí mà bạn đã thu thập được trong quá trình phỏng vấn, khảo sát. Hãy đảm bảo chúng được viết dưới dạng <span class="highlight-text-green">**động từ hành động mạnh mẽ**</span> và thể hiện rõ ràng kết quả mong muốn.
-                        </p>
-                        <div class="bg-gray-50 p-4 rounded-md border border-gray-200">
-                            <h4 class="text-xl font-semibold text-dark-blue-1 mb-3">Ví dụ: Vị trí "Chuyên viên Tuyển dụng"</h4>
-                            <ul class="list-disc list-inside space-y-2">
-                                <li>**Nhiệm vụ 1**: Tìm kiếm và sàng lọc hồ sơ ứng viên trên các nền tảng tuyển dụng.</li>
-                                <li>**Nhiệm vụ 2**: Tổ chức và thực hiện phỏng vấn vòng đầu với ứng viên.</li>
-                                <li>**Nhiệm vụ 3**: Quản lý trải nghiệm ứng viên (Candidate Experience) trong suốt quy trình tuyển dụng.</li>
-                                <li>**Nhiệm vụ 4**: Soạn thảo và đăng tin tuyển dụng hiệu quả trên các kênh phù hợp.</li>
-                                <li>**Nhiệm vụ 5**: Xây dựng và duy trì mối quan hệ với các đối tác tuyển dụng, trường đại học.</li>
-                            </ul>
-                        </div>
-                        <a href="#toc-kien-thuc" class="scroll-to-top text-sm mt-4 block">Quay về Mục lục</a>
-                    </div>
-
-                    <div id="kien-thuc-b2" class="alternating-bg p-6 rounded-lg">
-                        <h3 class="text-2xl font-bold text-orange-primary mb-4">Bước 2: "Bóc tách" từng Nhiệm vụ (Task Decomposition)</h3>
-                        <p class="mb-4">
-                            Với mỗi nhiệm vụ đã liệt kê, hãy đặt ra một chuỗi câu hỏi <span class="highlight-text-orange">"Để làm được việc này, cần...?"</span> để chia nhỏ nó thành các <span class="highlight-text-green">**hành động cụ thể hơn**</span>. Bước này giúp bạn đi sâu vào chi tiết của từng công việc, là nền tảng cho việc xác định KSAO chính xác.
-                        </p>
-                        <div class="bg-gray-50 p-4 rounded-md border border-gray-200">
-                            <h4 class="text-xl font-semibold text-dark-blue-1 mb-3">Ví dụ chi tiết: "Tổ chức và thực hiện phỏng vấn vòng đầu"</h4>
-                            <p class="font-semibold text-dark-blue-2 mb-2">Để <span class="highlight-text-orange">tổ chức</span> phỏng vấn, cần làm gì?</p>
-                            <ul class="list-disc list-inside ml-4 space-y-1 mb-3">
-                                <li>Liên hệ với ứng viên để sắp xếp lịch phỏng vấn phù hợp.</li>
-                                <li>Đặt phòng họp hoặc tạo link họp online (Google Meet, Zoom, Microsoft Teams).</li>
-                                <li>Gửi email xác nhận lịch và hướng dẫn chi tiết cho ứng viên (địa điểm, link, người phỏng vấn).</li>
-                            </ul>
-                            <p class="font-semibold text-dark-blue-2 mb-2">Để <span class="highlight-text-orange">thực hiện</span> phỏng vấn, cần làm gì?</p>
-                            <ul class="list-disc list-inside ml-4 space-y-1">
-                                <li>Nghiên cứu kỹ hồ sơ ứng viên và Bản mô tả công việc (JD) trước buổi phỏng vấn.</li>
-                                <li>Chuẩn bị một bộ câu hỏi phỏng vấn có cấu trúc (ví dụ: theo phương pháp STAR, phỏng vấn hành vi).</li>
-                                <li>Đặt câu hỏi rõ ràng, lắng nghe chủ động và ghi chú lại câu trả lời của ứng viên.</li>
-                                <li>Đánh giá câu trả lời của ứng viên dựa trên một bộ tiêu chí đã được định sẵn.</li>
-                                <li>Giới thiệu về công ty và vị trí một cách hấp dẫn, thu hút ứng viên.</li>
-                            </ul>
-                        </div>
-                        <a href="#toc-kien-thuc" class="scroll-to-top text-sm mt-4 block">Quay về Mục lục</a>
-                    </div>
-
-                    <div id="kien-thuc-b3" class="alternating-bg p-6 rounded-lg">
-                        <h3 class="text-2xl font-bold text-orange-primary mb-4">Bước 3: Ánh xạ từ "Hành động" sang "KSAO"</h3>
-                        <p class="mb-4">
-                            Từ danh sách các hành động đã "bóc tách", hãy ánh xạ chúng vào 4 nhóm KSAO: <span class="highlight-text-green">**Kiến thức (Knowledge), Kỹ năng (Skill), Khả năng (Ability)**</span> và <span class="highlight-text-green">**Yếu tố khác (Other)**</span>. Đây là bước quan trọng nhất để chuyển đổi hành động thành các yêu cầu năng lực cụ thể và có thể đo lường được.
-                        </p>
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full bg-white border border-gray-300 rounded-lg shadow-sm">
-                                <thead class="bg-dark-blue-1 text-white">
-                                    <tr>
-                                        <th class="py-3 px-4 text-left text-sm font-semibold uppercase tracking-wider rounded-tl-lg">Hành động cụ thể</th>
-                                        <th class="py-3 px-4 text-left text-sm font-semibold uppercase tracking-wider">Câu hỏi gợi ý</th>
-                                        <th class="py-3 px-4 text-left text-sm font-semibold uppercase tracking-wider">Loại Năng lực</th>
-                                        <th class="py-3 px-4 text-left text-sm font-semibold uppercase tracking-wider rounded-tr-lg">Yêu cầu KSAO cụ thể</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-gray-200">
-                                    <tr class="hover:bg-gray-50">
-                                        <td class="py-3 px-4 text-sm">Chuẩn bị bộ câu hỏi phỏng vấn</td>
-                                        <td class="py-3 px-4 text-sm">Cần <span class="highlight-text-orange">biết</span> gì để đặt câu hỏi đúng?</td>
-                                        <td class="py-3 px-4 text-sm font-semibold text-green-primary">K (Kiến thức)</td>
-                                        <td class="py-3 px-4 text-sm">Kiến thức về các phương pháp phỏng vấn (STAR, phỏng vấn hành vi). Kiến thức về luật lao động cơ bản.</td>
-                                    </tr>
-                                    <tr class="hover:bg-gray-50">
-                                        <td class="py-3 px-4 text-sm">Đặt câu hỏi, lắng nghe, ghi chú</td>
-                                        <td class="py-3 px-4 text-sm">Cần <span class="highlight-text-orange">làm được</span> gì để khai thác thông tin?</td>
-                                        <td class="py-3 px-4 text-sm font-semibold text-green-primary">S (Kỹ năng)</td>
-                                        <td class="py-3 px-4 text-sm">Kỹ năng giao tiếp, kỹ năng đặt câu hỏi, kỹ năng lắng nghe chủ động.</td>
-                                    </tr>
-                                    <tr class="hover:bg-gray-50">
-                                        <td class="py-3 px-4 text-sm">Đánh giá câu trả lời của ứng viên</td>
-                                        <td class="py-3 px-4 text-sm">Cần có <span class="highlight-text-orange">khả năng/tố chất</span> gì để nhận định?</td>
-                                        <td class="py-3 px-4 text-sm font-semibold text-green-primary">A (Khả năng)</td>
-                                        <td class="py-3 px-4 text-sm">Khả năng đánh giá, nhận định con người. Khả năng tư duy phản biện.</td>
-                                    </tr>
-                                    <tr class="hover:bg-gray-50">
-                                        <td class="py-3 px-4 text-sm">Sắp xếp lịch, gửi email</td>
-                                        <td class="py-3 px-4 text-sm">Cần <span class="highlight-text-orange">làm được</span> gì để quy trình trôi chảy?</td>
-                                        <td class="py-3 px-4 text-sm font-semibold text-green-primary">S (Kỹ năng)</td>
-                                        <td class="py-3 px-4 text-sm">Kỹ năng tổ chức và quản lý thời gian. Kỹ năng sử dụng các công cụ (email, lịch).</td>
-                                    </tr>
-                                    <tr class="hover:bg-gray-50">
-                                        <td class="py-3 px-4 text-sm">Giới thiệu về công ty một cách hấp dẫn</td>
-                                        <td class="py-3 px-4 text-sm">Cần <span class="highlight-text-orange">làm được</span> gì để thu hút ứng viên?</td>
-                                        <td class="py-3 px-4 text-sm font-semibold text-green-primary">S (Kỹ năng)</td>
-                                        <td class="py-3 px-4 text-sm">Kỹ năng thuyết trình, kỹ năng bán hàng (bán "cơ hội nghề nghiệp").</td>
-                                    </tr>
-                                    <tr class="hover:bg-gray-50">
-                                        <td class="py-3 px-4 text-sm">Có kinh nghiệm làm việc tương tự</td>
-                                        <td class="py-3 px-4 text-sm">Cần có <span class="highlight-text-orange">yếu tố</span> gì khác để đảm bảo?</td>
-                                        <td class="py-3 px-4 text-sm font-semibold text-green-primary">O (Yếu tố khác)</td>
-                                        <td class="py-3 px-4 text-sm">Tối thiểu 1 năm kinh nghiệm tuyển dụng ở vị trí tương đương.</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                        <p class="mt-4">
-                            **Kết quả**: Chỉ từ một nhiệm vụ, bạn đã xác định được một loạt các KSAO cụ thể và có thể đo lường được. Lặp lại quy trình này cho tất cả các nhiệm vụ cốt lõi, bạn sẽ có một <span class="highlight-text-orange">"Hồ sơ DNA Công việc"</span> hoàn chỉnh, làm cơ sở cho việc xây dựng mô tả công việc, tiêu chí tuyển dụng, và khung năng lực hiệu quả.
-                        </p>
-                        <a href="#toc-kien-thuc" class="scroll-to-top text-sm mt-4 block">Quay về Mục lục</a>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Tab 'Công cụ để làm' -->
-            <section id="cong-cu-lam" class="tab-content hidden">
-                <h2 class="text-3xl font-bold text-dark-blue-1 mb-6">Công cụ để làm KSAO tự động</h2>
-                <div id="toc-cong-cu-lam" class="mb-8 p-4 bg-gray-100 rounded-lg shadow-inner">
-                    <h3 class="text-xl font-semibold text-dark-blue-2 mb-3">Mục lục</h3>
-                    <!-- Mục lục sẽ được tạo tự động bằng JavaScript -->
-                </div>
-
-                <div class="space-y-8">
-                    <div id="cong-cu-lam-task-input" class="alternating-bg p-6 rounded-lg">
-                        <h3 class="text-2xl font-bold text-orange-primary mb-4">1. Nhập Nhiệm vụ Cốt lõi</h3>
-                        <p class="mb-4">
-                            Hãy nhập một nhiệm vụ cốt lõi của vị trí bạn muốn phân tích. Đảm bảo nhiệm vụ được viết dưới dạng động từ hành động mạnh mẽ và rõ ràng.
-                        </p>
-                        <label for="taskInput" class="block text-lg font-semibold text-dark-blue-2 mb-2">Nhiệm vụ:</label>
-                        <textarea id="taskInput" rows="3" class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-primary focus:border-transparent transition duration-200" placeholder="Ví dụ: Tổ chức và thực hiện phỏng vấn vòng đầu"></textarea>
-                        <button id="decomposeTaskBtn" class="mt-4 bg-green-primary text-white py-3 px-6 rounded-md shadow-md hover:bg-green-700 transition duration-300 transform hover:scale-105">
-                            <span id="decomposeBtnText">Bóc tách Nhiệm vụ</span>
-                            <span id="decomposeSpinner" class="spinner hidden"></span>
-                        </button>
-                        <a href="#toc-cong-cu-lam" class="scroll-to-top text-sm mt-4 block">Quay về Mục lục</a>
-                    </div>
-
-                    <div id="cong-cu-lam-actions-output" class="alternating-bg p-6 rounded-lg hidden">
-                        <h3 class="text-2xl font-bold text-orange-primary mb-4">2. Các Hành động đề xuất</h3>
-                        <p class="mb-4">
-                            Dưới đây là các hành động cụ thể được đề xuất từ nhiệm vụ bạn đã nhập. Vui lòng kiểm tra và chỉnh sửa nếu cần, sau đó chọn các hành động bạn muốn phân tích KSAO.
-                        </p>
-                        <div id="actionsContainer" class="space-y-3">
-                            <!-- Các hành động đề xuất sẽ được tải vào đây -->
-                        </div>
-                        <button id="suggestKSAOBtn" class="mt-6 bg-dark-blue-1 text-white py-3 px-6 rounded-md shadow-md hover:bg-dark-blue-2 transition duration-300 transform hover:scale-105">
-                            <span id="ksaoBtnText">Đề xuất KSAO</span>
-                            <span id="ksaoSpinner" class="spinner hidden"></span>
-                        </button>
-                        <a href="#toc-cong-cu-lam" class="scroll-to-top text-sm mt-4 block">Quay về Mục lục</a>
-                    </div>
-
-                    <div id="cong-cu-lam-ksao-output" class="alternating-bg p-6 rounded-lg hidden">
-                        <h3 class="text-2xl font-bold text-orange-primary mb-4">3. Hồ sơ KSAO đề xuất</h3>
-                        <p class="mb-4">
-                            Dựa trên các hành động đã chọn, đây là hồ sơ KSAO được đề xuất. Bạn có thể chỉnh sửa trực tiếp các yêu cầu KSAO để phù hợp nhất với vị trí.
-                        </p>
-                        <div id="ksaoResultsContainer" class="space-y-4">
-                            <!-- Kết quả KSAO sẽ được tải vào đây -->
-                        </div>
-                        <a href="#toc-cong-cu-lam" class="scroll-to-top text-sm mt-4 block">Quay về Mục lục</a>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Tab 'Minh hoạ Công ty' -->
-            <section id="minh-hoa-cong-ty" class="tab-content hidden">
-                <h2 class="text-3xl font-bold text-dark-blue-1 mb-6">Minh hoạ Công ty: Ứng dụng thực tế KSAO</h2>
-                <div id="toc-minh-hoa-cong-ty" class="mb-8 p-4 bg-gray-100 rounded-lg shadow-inner">
-                    <h3 class="text-xl font-semibold text-dark-blue-2 mb-3">Mục lục</h3>
-                    <!-- Mục lục sẽ được tạo tự động bằng JavaScript -->
-                </div>
-
-                <div class="space-y-10">
-                    <!-- Kịch bản 1: TechSolutions -->
-                    <div id="minh-hoa-techsolutions" class="alternating-bg p-6 rounded-lg shadow-md">
-                        <h3 class="text-2xl font-bold text-orange-primary mb-4">1. Công ty Cổ phần TechSolutions</h3>
-                        <p class="mb-4 text-lg font-semibold text-dark-blue-2">Bối cảnh:</p>
-                        <p class="mb-4">
-                            **TechSolutions** là một công ty công nghệ phát triển nhanh với hơn <span class="highlight-text-orange">300 nhân sự</span>, chuyên về phát triển phần mềm AI và Big Data. Công ty đang đối mặt với thách thức lớn trong việc tuyển dụng các vị trí kỹ sư AI cấp cao, với <span class="highlight-text-orange">tỷ lệ tuyển dụng thành công chỉ 15%</span> và thời gian tuyển dụng trung bình là <span class="highlight-text-orange">90 ngày</span>, cao hơn nhiều so với mục tiêu 45 ngày. Nguyên nhân chính được xác định là do mô tả công việc (JD) thiếu rõ ràng và tiêu chí đánh giá ứng viên không nhất quán.
-                        </p>
-
-                        <p class="mb-4 text-lg font-semibold text-dark-blue-2">Các bước áp dụng quy trình KSAO:</p>
-                        <div class="space-y-6">
-                            <div class="bg-gray-50 p-4 rounded-md border border-gray-200">
-                                <h4 class="text-xl font-semibold text-green-primary mb-2">1.1. Bước 1: Liệt kê Nhiệm vụ Cốt lõi cho vị trí "Kỹ sư AI cấp cao"</h4>
-                                <p class="mb-2">Phòng Nhân sự đã phỏng vấn các Trưởng nhóm và Giám đốc dự án để xác định 5 nhiệm vụ chính:</p>
-                                <ul class="list-disc list-inside ml-4 space-y-1">
-                                    <li>Thiết kế và phát triển các mô hình học máy phức tạp.</li>
-                                    <li>Tối ưu hóa hiệu suất và khả năng mở rộng của các hệ thống AI hiện có.</li>
-                                    <li>Nghiên cứu và áp dụng các công nghệ AI tiên tiến mới.</li>
-                                    <li>Hướng dẫn và đào tạo các kỹ sư AI cấp dưới.</li>
-                                    <li>Phối hợp với các nhóm sản phẩm để tích hợp giải pháp AI vào sản phẩm.</li>
-                                </ul>
-                            </div>
-                            <div class="bg-gray-50 p-4 rounded-md border border-gray-200">
-                                <h4 class="text-xl font-semibold text-green-primary mb-2">1.2. Bước 2: Bóc tách Nhiệm vụ "Thiết kế và phát triển các mô hình học máy phức tạp"</h4>
-                                <p class="mb-2">Để thực hiện nhiệm vụ này, các hành động cụ thể bao gồm:</p>
-                                <ul class="list-disc list-inside ml-4 space-y-1">
-                                    <li>Phân tích yêu cầu bài toán và dữ liệu đầu vào.</li>
-                                    <li>Lựa chọn thuật toán và kiến trúc mô hình phù hợp.</li>
-                                    <li>Viết mã (code) sạch, hiệu quả bằng Python/TensorFlow/PyTorch.</li>
-                                    <li>Thực hiện kiểm thử và đánh giá hiệu năng mô hình.</li>
-                                    <li>Triển khai mô hình vào môi trường sản phẩm.</li>
-                                </ul>
-                            </div>
-                            <div class="bg-gray-50 p-4 rounded-md border border-gray-200">
-                                <h4 class="text-xl font-semibold text-green-primary mb-2">1.3. Bước 3: Ánh xạ Hành động sang KSAO</h4>
-                                <p class="mb-2">Ví dụ ánh xạ cho hành động "Viết mã (code) sạch, hiệu quả bằng Python/TensorFlow/PyTorch":</p>
-                                <table class="min-w-full bg-white border border-gray-300 mt-3">
-                                    <thead class="bg-dark-blue-1 text-white">
-                                        <tr>
-                                            <th class="py-2 px-3 text-left text-xs font-semibold uppercase">Hành động</th>
-                                            <th class="py-2 px-3 text-left text-xs font-semibold uppercase">Loại</th>
-                                            <th class="py-2 px-3 text-left text-xs font-semibold uppercase">Yêu cầu KSAO</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr>
-                                            <td class="py-2 px-3 text-sm">Viết mã sạch, hiệu quả</td>
-                                            <td class="py-2 px-3 text-sm font-semibold text-green-primary">K</td>
-                                            <td class="py-2 px-3 text-sm">Kiến thức về Python, TensorFlow/PyTorch, cấu trúc dữ liệu, thuật toán.</td>
-                                        </tr>
-                                        <tr>
-                                            <td class="py-2 px-3 text-sm">Viết mã sạch, hiệu quả</td>
-                                            <td class="py-2 px-3 text-sm font-semibold text-green-primary">S</td>
-                                            <td class="py-2 px-3 text-sm">Kỹ năng lập trình Python, debug, tối ưu hóa mã.</td>
-                                        </tr>
-                                        <tr>
-                                            <td class="py-2 px-3 text-sm">Viết mã sạch, hiệu quả</td>
-                                            <td class="py-2 px-3 text-sm font-semibold text-green-primary">A</td>
-                                            <td class="py-2 px-3 text-sm">Khả năng tư duy logic, giải quyết vấn đề phức tạp.</td>
-                                        </tr>
-                                        <tr>
-                                            <td class="py-2 px-3 text-sm">Viết mã sạch, hiệu quả</td>
-                                            <td class="py-2 px-3 text-sm font-semibold text-green-primary">O</td>
-                                            <td class="py-2 px-3 text-sm">Có kinh nghiệm thực tế với các dự án AI quy mô lớn.</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                                <p class="mt-3 text-sm text-gray-600">
-                                    **Công cụ đề cập:** Hệ thống quản lý mã nguồn (GitLab/GitHub), IDE (PyCharm/VS Code).
-                                </p>
-                            </div>
-                        </div>
-
-                        <p class="mb-4 text-lg font-semibold text-dark-blue-2 mt-6">Phân tích và Đánh giá Giải pháp:</p>
-                        <p class="mb-4">
-                            Việc áp dụng KSAO giúp TechSolutions <span class="highlight-text-orange">chuẩn hóa JD</span> và <span class="highlight-text-orange">bộ câu hỏi phỏng vấn</span>. Trước đây, JD thường chỉ liệt kê các công nghệ, nay đã bổ sung rõ ràng các kỹ năng mềm và khả năng tư duy.
-                        </p>
-                        <p class="mb-4">
-                            **Thách thức:** Ban đầu, các Trưởng nhóm kỹ thuật gặp khó khăn trong việc "bóc tách" nhiệm vụ thành hành động cụ thể, do họ quen với việc mô tả công việc ở mức độ tổng quát.
-                            **Giải pháp:** Phòng Nhân sự đã tổ chức các buổi workshop chuyên sâu, sử dụng các ví dụ thực tế và công cụ hỗ trợ (như ứng dụng này) để hướng dẫn chi tiết.
-                        </p>
-                        <p class="mb-4 text-lg font-semibold text-dark-blue-2">Dữ liệu mô phỏng và Kết quả:</p>
-                        <div class="overflow-x-auto mb-4">
-                            <table class="min-w-full bg-white border border-gray-300 rounded-lg shadow-sm">
-                                <thead class="bg-dark-blue-1 text-white">
-                                    <tr>
-                                        <th class="py-3 px-4 text-left text-sm font-semibold uppercase">Chỉ số</th>
-                                        <th class="py-3 px-4 text-left text-sm font-semibold uppercase">Trước KSAO</th>
-                                        <th class="py-3 px-4 text-left text-sm font-semibold uppercase">Sau KSAO (6 tháng)</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-gray-200">
-                                    <tr>
-                                        <td class="py-3 px-4 text-sm">Tỷ lệ tuyển dụng thành công</td>
-                                        <td class="py-3 px-4 text-sm">15%</td>
-                                        <td class="py-3 px-4 text-sm text-result">**35%**</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="py-3 px-4 text-sm">Thời gian tuyển dụng trung bình</td>
-                                        <td class="py-3 px-4 text-sm">90 ngày</td>
-                                        <td class="py-3 px-4 text-sm text-result">**55 ngày**</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="py-3 px-4 text-sm">Tỷ lệ giữ chân NV (1 năm)</td>
-                                        <td class="py-3 px-4 text-sm">70%</td>
-                                        <td class="py-3 px-4 text-sm text-result">**85%**</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                        <p class="mb-4">
-                            **Quy trình (Flow) tuyển dụng mới sau KSAO:**
-                            <span class="highlight-text-green">JD chuẩn KSAO</span> &rarr; <span class="highlight-text-green">Sàng lọc hồ sơ (tự động/bán tự động)</span> &rarr; <span class="highlight-text-green">Phỏng vấn KSAO (có cấu trúc)</span> &rarr; <span class="highlight-text-green">Đánh giá đa chiều</span> &rarr; <span class="highlight-text-green">Tuyển dụng</span>.
-                        </p>
-                        <p class="mb-4">
-                            **Công thức tính toán hiệu quả:**
-                            * **Tăng trưởng tỷ lệ tuyển dụng thành công:** (35% - 15%) = <span class="text-result">**20%**</span>
-                            * **Giảm thời gian tuyển dụng:** (90 - 55) ngày = <span class="text-result">**35 ngày**</span>
-                            * **Chi phí tiết kiệm ước tính:** Giả sử mỗi ngày tuyển dụng chậm mất 1 triệu VND chi phí cơ hội. Tiết kiệm được 35 ngày * 1 triệu VND/ngày = <span class="text-result">**35 triệu VND**</span> cho mỗi vị trí.
-                        </p>
-                        <a href="#toc-minh-hoa-cong-ty" class="scroll-to-top text-sm mt-4 block">Quay về Mục lục</a>
-                    </div>
-
-                    <!-- Kịch bản 2: RetailPro -->
-                    <div id="minh-hoa-retailpro" class="alternating-bg p-6 rounded-lg shadow-md">
-                        <h3 class="text-2xl font-bold text-orange-primary mb-4">2. Tập đoàn RetailPro</h3>
-                        <p class="mb-4 text-lg font-semibold text-dark-blue-2">Bối cảnh:</p>
-                        <p class="mb-4">
-                            **RetailPro** là chuỗi siêu thị bán lẻ hàng đầu với hơn <span class="highlight-text-orange">200 cửa hàng</span> trên toàn quốc và <span class="highlight-text-orange">10,000 nhân viên</span>. Công ty đang gặp vấn đề về chất lượng dịch vụ khách hàng không đồng đều giữa các chi nhánh, dẫn đến <span class="highlight-text-orange">giảm 10% điểm hài lòng khách hàng (CSAT)</span> trong quý vừa qua. Phân tích cho thấy nhân viên bán hàng thiếu các kỹ năng mềm cần thiết và không có khung năng lực rõ ràng để đào tạo.
-                        </p>
-
-                        <p class="mb-4 text-lg font-semibold text-dark-blue-2">Các bước áp dụng quy trình KSAO:</p>
-                        <div class="space-y-6">
-                            <div class="bg-gray-50 p-4 rounded-md border border-gray-200">
-                                <h4 class="text-xl font-semibold text-green-primary mb-2">2.1. Bước 1: Liệt kê Nhiệm vụ Cốt lõi cho vị trí "Nhân viên Bán hàng"</h4>
-                                <p class="mb-2">Phòng Đào tạo và Phát triển đã hợp tác với Quản lý cửa hàng để xác định 5 nhiệm vụ chính:</p>
-                                <ul class="list-disc list-inside ml-4 space-y-1">
-                                    <li>Tư vấn và giới thiệu sản phẩm cho khách hàng.</li>
-                                    <li>Xử lý các giao dịch mua bán tại quầy thanh toán.</li>
-                                    <li>Giải quyết khiếu nại và phản hồi của khách hàng.</li>
-                                    <li>Sắp xếp, trưng bày hàng hóa và kiểm kê tồn kho.</li>
-                                    <li>Duy trì vệ sinh và an ninh khu vực bán hàng.</li>
-                                </ul>
-                            </div>
-                            <div class="bg-gray-50 p-4 rounded-md border border-gray-200">
-                                <h4 class="text-xl font-semibold text-green-primary mb-2">2.2. Bước 2: Bóc tách Nhiệm vụ "Giải quyết khiếu nại và phản hồi của khách hàng"</h4>
-                                <p class="mb-2">Để thực hiện nhiệm vụ này, các hành động cụ thể bao gồm:</p>
-                                <ul class="list-disc list-inside ml-4 space-y-1">
-                                    <li>Lắng nghe chủ động và thấu hiểu vấn đề của khách hàng.</li>
-                                    <li>Xin lỗi và thể hiện sự đồng cảm.</li>
-                                    <li>Đề xuất các giải pháp khả thi và phù hợp.</li>
-                                    <li>Thực hiện các bước giải quyết theo quy định công ty.</li>
-                                    <li>Theo dõi và đảm bảo khách hàng hài lòng sau khi vấn đề được giải quyết.</li>
-                                </ul>
-                            </div>
-                            <div class="bg-gray-50 p-4 rounded-md border border-gray-200">
-                                <h4 class="text-xl font-semibold text-green-primary mb-2">2.3. Bước 3: Ánh xạ Hành động sang KSAO</h4>
-                                <p class="mb-2">Ví dụ ánh xạ cho hành động "Lắng nghe chủ động và thấu hiểu vấn đề của khách hàng":</p>
-                                <table class="min-w-full bg-white border border-gray-300 mt-3">
-                                    <thead class="bg-dark-blue-1 text-white">
-                                        <tr>
-                                            <th class="py-2 px-3 text-left text-xs font-semibold uppercase">Hành động</th>
-                                            <th class="py-2 px-3 text-left text-xs font-semibold uppercase">Loại</th>
-                                            <th class="py-2 px-3 text-left text-xs font-semibold uppercase">Yêu cầu KSAO</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr>
-                                            <td class="py-2 px-3 text-sm">Lắng nghe chủ động</td>
-                                            <td class="py-2 px-3 text-sm font-semibold text-green-primary">S</td>
-                                            <td class="py-2 px-3 text-sm">Kỹ năng lắng nghe không ngắt lời, đặt câu hỏi làm rõ.</td>
-                                        </tr>
-                                        <tr>
-                                            <td class="py-2 px-3 text-sm">Thấu hiểu vấn đề</td>
-                                            <td class="py-2 px-3 text-sm font-semibold text-green-primary">A</td>
-                                            <td class="py-2 px-3 text-sm">Khả năng đồng cảm, phân tích tình huống nhanh.</td>
-                                        </tr>
-                                        <tr>
-                                            <td class="py-2 px-3 text-sm">Thấu hiểu vấn đề</td>
-                                            <td class="py-2 px-3 text-sm font-semibold text-green-primary">O</td>
-                                            <td class="py-2 px-3 text-sm">Thái độ bình tĩnh, kiên nhẫn khi đối mặt với khách hàng khó tính.</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                                <p class="mt-3 text-sm text-gray-600">
-                                    **Công cụ đề cập:** Hệ thống quản lý quan hệ khách hàng (CRM - giả định), sổ ghi nhận phản hồi.
-                                </p>
-                            </div>
-                        </div>
-
-                        <p class="mb-4 text-lg font-semibold text-dark-blue-2 mt-6">Phân tích và Đánh giá Giải pháp:</p>
-                        <p class="mb-4">
-                            RetailPro đã sử dụng khung KSAO để <span class="highlight-text-orange">thiết kế lại chương trình đào tạo</span> cho nhân viên bán hàng, tập trung vào các kỹ năng giao tiếp, giải quyết vấn đề và thái độ phục vụ.
-                        </p>
-                        <p class="mb-4">
-                            **Thách thức:** Đảm bảo tất cả <span class="highlight-text-orange">10,000 nhân viên</span> được đào tạo đồng bộ và hiệu quả.
-                            **Giải pháp:** Phát triển các khóa học e-learning nội bộ và tổ chức các buổi huấn luyện thực hành tại cửa hàng với sự tham gia của quản lý khu vực. Sử dụng hệ thống LMS (Learning Management System) để theo dõi tiến độ.
-                        </p>
-                        <p class="mb-4 text-lg font-semibold text-dark-blue-2">Dữ liệu mô phỏng và Kết quả:</p>
-                        <div class="overflow-x-auto mb-4">
-                            <table class="min-w-full bg-white border border-gray-300 rounded-lg shadow-sm">
-                                <thead class="bg-dark-blue-1 text-white">
-                                    <tr>
-                                        <th class="py-3 px-4 text-left text-sm font-semibold uppercase">Chỉ số</th>
-                                        <th class="py-3 px-4 text-left text-sm font-semibold uppercase">Trước KSAO</th>
-                                        <th class="py-3 px-4 text-left text-sm font-semibold uppercase">Sau KSAO (6 tháng)</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-gray-200">
-                                    <tr>
-                                        <td class="py-3 px-4 text-sm">Điểm hài lòng khách hàng (CSAT)</td>
-                                        <td class="py-3 px-4 text-sm">75%</td>
-                                        <td class="py-3 px-4 text-sm text-result">**88%**</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="py-3 px-4 text-sm">Tỷ lệ khiếu nại giảm</td>
-                                        <td class="py-3 px-4 text-sm">Không có dữ liệu</td>
-                                        <td class="py-3 px-4 text-sm text-result">**25%**</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="py-3 px-4 text-sm">Doanh thu trung bình/khách hàng</td>
-                                        <td class="py-3 px-4 text-sm">500,000 VND</td>
-                                        <td class="py-3 px-4 text-sm text-result">**550,000 VND**</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                        <p class="mb-4">
-                            **Quy trình (Flow) đào tạo và phát triển năng lực mới:**
-                            <span class="highlight-text-green">Phân tích KSAO</span> &rarr; <span class="highlight-text-green">Xây dựng chương trình đào tạo</span> &rarr; <span class="highlight-text-green">Triển khai e-learning & workshop</span> &rarr; <span class="highlight-text-green">Đánh giá hiệu quả (khảo sát CSAT)</span> &rarr; <span class="highlight-text-green">Cải tiến liên tục</span>.
-                        </p>
-                        <p class="mb-4">
-                            **Công thức tính toán hiệu quả:**
-                            * **Tăng trưởng CSAT:** (88% - 75%) = <span class="text-result">**13%**</span>
-                            * **Tăng doanh thu trung bình/khách hàng:** (550,000 - 500,000) VND = <span class="text-result">**50,000 VND**</span>
-                            * **Ước tính tăng doanh thu hàng tháng:** Giả sử có 1 triệu giao dịch/tháng. Tăng 50,000 VND/giao dịch * 1 triệu giao dịch = <span class="text-result">**50 tỷ VND**</span>.
-                        </p>
-                        <a href="#toc-minh-hoa-cong-ty" class="scroll-to-top text-sm mt-4 block">Quay về Mục lục</a>
-                    </div>
-                </div>
-            </section>
-        </main>
-
-        <!-- Footer -->
-        <footer class="text-center mt-8 py-4 text-gray-600 text-sm border-t border-gray-300">
-            Học Liệu cho đào tạo. Bản quyền thuộc Rosie Đào Hạnh Giang CEO Build Talents
-        </footer>
-    </div>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const tabButtons = document.querySelectorAll('.tab-button');
-            const tabContents = document.querySelectorAll('.tab-content');
-            const tocContainers = {
-                'kien-thuc': document.getElementById('toc-kien-thuc'),
-                'cong-cu-lam': document.getElementById('toc-cong-cu-lam'),
-                'minh-hoa-cong-ty': document.getElementById('toc-minh-hoa-cong-ty')
-            };
-
-            // Hàm tạo Mục lục cho một tab cụ thể
-            function generateTOC(tabId) {
-                const contentSection = document.getElementById(tabId);
-                const tocContainer = tocContainers[tabId];
-                if (!contentSection || !tocContainer) return;
-
-                // Xóa Mục lục cũ nếu có
-                const existingTocList = tocContainer.querySelector('ul');
-                if (existingTocList) {
-                    existingTocList.remove();
-                }
-
-                const tocList = document.createElement('ul');
-                tocList.className = 'list-disc list-inside space-y-2';
-
-                // Tìm tất cả các thẻ h3 trong phần nội dung (trừ h3 của chính Mục lục)
-                const headings = contentSection.querySelectorAll('h3:not(#toc-kien-thuc h3, #toc-cong-cu-lam h3, #toc-minh-hoa-cong-ty h3)');
-                headings.forEach((heading, index) => {
-                    // Tạo ID duy nhất cho mỗi tiêu đề nếu chưa có
-                    const headingId = `${tabId}-section-${index}`;
-                    heading.id = headingId;
-
-                    const listItem = document.createElement('li');
-                    const link = document.createElement('a');
-                    link.href = `#${headingId}`;
-                    link.textContent = heading.textContent;
-                    link.className = 'toc-link';
-                    link.addEventListener('click', (e) => {
-                        e.preventDefault();
-                        document.getElementById(headingId).scrollIntoView({ behavior: 'smooth' });
-                    });
-                    listItem.appendChild(link);
-                    tocList.appendChild(listItem);
-                });
-                tocContainer.appendChild(tocList);
-            }
-
-            // Hàm xử lý chuyển đổi tab
-            function showTab(tabId) {
-                tabContents.forEach(content => {
-                    content.classList.add('hidden'); // Ẩn tất cả nội dung tab
-                });
-                document.getElementById(tabId).classList.remove('hidden'); // Hiển thị nội dung tab được chọn
-
-                tabButtons.forEach(button => {
-                    button.classList.remove('active'); // Xóa trạng thái active của tất cả nút tab
-                });
-                document.querySelector(`[data-tab="${tabId}"]`).classList.add('active'); // Đặt trạng thái active cho nút tab được chọn
-
-                // Tạo Mục lục cho tab vừa được kích hoạt
-                generateTOC(tabId);
-            }
-
-            // Thêm sự kiện click cho các nút tab
-            tabButtons.forEach(button => {
-                button.addEventListener('click', () => {
-                    const tabId = button.dataset.tab;
-                    showTab(tabId);
-                });
-            });
-
-            // Hiển thị tab mặc định khi tải trang (tab 'kien-thuc')
-            showTab('kien-thuc');
-
-            // --- Logic cho Tab 'Công cụ để làm' ---
-            const taskInput = document.getElementById('taskInput');
-            const decomposeTaskBtn = document.getElementById('decomposeTaskBtn');
-            const actionsContainer = document.getElementById('actionsContainer');
-            const suggestKSAOBtn = document.getElementById('suggestKSAOBtn');
-            const ksaoResultsContainer = document.getElementById('ksaoResultsContainer');
-            const actionsOutputSection = document.getElementById('cong-cu-lam-actions-output');
-            const ksaoOutputSection = document.getElementById('cong-cu-lam-ksao-output');
-
-            const decomposeBtnText = document.getElementById('decomposeBtnText');
-            const decomposeSpinner = document.getElementById('decomposeSpinner');
-            const ksaoBtnText = document.getElementById('ksaoBtnText');
-            const ksaoSpinner = document.getElementById('ksaoSpinner');
-
-            // Hàm hiển thị/ẩn spinner và disable/enable nút
-            function setLoadingState(button, textSpan, spinnerSpan, isLoading) {
-                if (isLoading) {
-                    button.disabled = true;
-                    textSpan.classList.add('hidden');
-                    spinnerSpan.classList.remove('hidden');
-                } else {
-                    button.disabled = false;
-                    textSpan.classList.remove('hidden');
-                    spinnerSpan.classList.add('hidden');
-                }
-            }
-
-            // Gọi API Gemini để bóc tách nhiệm vụ
-            async function decomposeTaskWithAI(task) {
-                setLoadingState(decomposeTaskBtn, decomposeBtnText, decomposeSpinner, true);
-                actionsContainer.innerHTML = ''; // Clear previous actions
-                actionsOutputSection.classList.add('hidden'); // Hide section during loading
-
-                const prompt = `Phân tích nhiệm vụ sau và liệt kê các hành động cụ thể cần thiết để hoàn thành nhiệm vụ đó. Trả lời dưới dạng một mảng JSON các chuỗi (strings). Ví dụ: ["Hành động 1", "Hành động 2"]. Nhiệm vụ: "${task}"`;
-                let chatHistory = [];
-                chatHistory.push({ role: "user", parts: [{ text: prompt }] });
-                const payload = {
-                    contents: chatHistory,
-                    generationConfig: {
-                        responseMimeType: "application/json",
-                        responseSchema: {
-                            type: "ARRAY",
-                            items: { "type": "STRING" }
-                        }
-                    }
-                };
-                const apiKey = ""; // Canvas sẽ tự động cung cấp API key
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
-
-                try {
-                    const response = await fetch(apiUrl, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-                    const result = await response.json();
-
-                    if (result.candidates && result.candidates.length > 0 &&
-                        result.candidates[0].content && result.candidates[0].content.parts &&
-                        result.candidates[0].content.parts.length > 0) {
-                        const jsonString = result.candidates[0].content.parts[0].text;
-                        const actions = JSON.parse(jsonString);
-                        return actions;
-                    } else {
-                        console.error('API response structure unexpected:', result);
-                        return ['Không thể bóc tách nhiệm vụ. Vui lòng thử lại hoặc nhập thủ công.'];
-                    }
-                } catch (error) {
-                    console.error('Lỗi khi gọi API Gemini:', error);
-                    return ['Đã xảy ra lỗi khi kết nối với AI. Vui lòng thử lại.'];
-                } finally {
-                    setLoadingState(decomposeTaskBtn, decomposeBtnText, decomposeSpinner, false);
-                }
-            }
-
-            // Gọi API Gemini để đề xuất KSAO
-            async function suggestKSAOWithAI(action) {
-                const prompt = `Đề xuất Kiến thức (K), Kỹ năng (S), Khả năng (A), và Yếu tố khác (O) cần thiết để thực hiện hành động sau. Trả lời dưới dạng JSON object với các khóa 'K', 'S', 'A', 'O', mỗi khóa chứa một mảng chuỗi (strings). Ví dụ: {"K": ["Kiến thức X"], "S": ["Kỹ năng Y"], "A": ["Khả năng Z"], "O": ["Yếu tố W"]}. Hành động: "${action}"`;
-                let chatHistory = [];
-                chatHistory.push({ role: "user", parts: [{ text: prompt }] });
-                const payload = {
-                    contents: chatHistory,
-                    generationConfig: {
-                        responseMimeType: "application/json",
-                        responseSchema: {
-                            type: "OBJECT",
-                            properties: {
-                                "K": { "type": "ARRAY", "items": { "type": "STRING" } },
-                                "S": { "type": "ARRAY", "items": { "type": "STRING" } },
-                                "A": { "type": "ARRAY", "items": { "type": "STRING" } },
-                                "O": { "type": "ARRAY", "items": { "type": "STRING" } }
-                            },
-                            "propertyOrdering": ["K", "S", "A", "O"]
-                        }
-                    }
-                };
-                const apiKey = ""; // Canvas sẽ tự động cung cấp API key
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
-
-                try {
-                    const response = await fetch(apiUrl, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-                    const result = await response.json();
-
-                    if (result.candidates && result.candidates.length > 0 &&
-                        result.candidates[0].content && result.candidates[0].content.parts &&
-                        result.candidates[0].content.parts.length > 0) {
-                        const jsonString = result.candidates[0].content.parts[0].text;
-                        const ksao = JSON.parse(jsonString);
-                        return ksao;
-                    } else {
-                        console.error('API response structure unexpected:', result);
-                        return { K: ['Không thể đề xuất KSAO.'], S: [], A: [], O: [] };
-                    }
-                } catch (error) {
-                    console.error('Lỗi khi gọi API Gemini:', error);
-                    return { K: ['Đã xảy ra lỗi khi kết nối với AI.'], S: [], A: [], O: [] };
-                }
-            }
-
-            // Xử lý sự kiện khi nhấn nút "Bóc tách Nhiệm vụ"
-            decomposeTaskBtn.addEventListener('click', async () => {
-                const task = taskInput.value.trim();
-                if (task) {
-                    const actions = await decomposeTaskWithAI(task);
-                    actionsContainer.innerHTML = ''; // Xóa các hành động cũ
-                    actions.forEach((action, index) => {
-                        const actionDiv = document.createElement('div');
-                        actionDiv.className = 'flex flex-wrap items-center space-x-2 p-2 bg-white rounded-md border border-gray-200 shadow-sm';
-                        actionDiv.innerHTML = `
-                            <input type="checkbox" id="action-${index}" class="form-checkbox h-5 w-5 text-green-primary rounded-md" checked>
-                            <label for="action-${index}" class="text-gray-700 flex-grow cursor-pointer">${action}</label>
-                            <input type="text" value="${action}" class="flex-grow p-1 border border-gray-200 rounded-md text-sm hidden">
-                            <button class="edit-action-btn bg-dark-blue-1 text-white text-xs py-1 px-2 rounded-md hover:bg-dark-blue-2 transition duration-200">Sửa</button>
-                            <button class="save-action-btn bg-green-primary text-white text-xs py-1 px-2 rounded-md hover:bg-green-700 transition duration-200 hidden">Lưu</button>
-                        `;
-                        actionsContainer.appendChild(actionDiv);
-                    });
-                    actionsOutputSection.classList.remove('hidden'); // Hiển thị phần hành động đề xuất
-                    // Cuộn đến phần hành động đề xuất
-                    actionsOutputSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                } else {
-                    console.log('Vui lòng nhập nhiệm vụ cốt lõi.');
-                }
-            });
-
-            // Ủy quyền sự kiện cho các nút sửa/lưu hành động
-            actionsContainer.addEventListener('click', (e) => {
-                if (e.target.classList.contains('edit-action-btn')) {
-                    const actionDiv = e.target.closest('div');
-                    const label = actionDiv.querySelector('label');
-                    const input = actionDiv.querySelector('input[type="text"]');
-                    const editBtn = e.target;
-                    const saveBtn = actionDiv.querySelector('.save-action-btn');
-
-                    input.value = label.textContent; // Đặt giá trị cho input từ label
-                    label.classList.add('hidden');
-                    input.classList.remove('hidden');
-                    editBtn.classList.add('hidden');
-                    saveBtn.classList.remove('hidden');
-                    input.focus(); // Tự động focus vào input để chỉnh sửa
-                } else if (e.target.classList.contains('save-action-btn')) {
-                    const actionDiv = e.target.closest('div');
-                    const label = actionDiv.querySelector('label');
-                    const input = actionDiv.querySelector('input[type="text"]');
-                    const editBtn = actionDiv.querySelector('.edit-action-btn');
-                    const saveBtn = e.target;
-
-                    label.textContent = input.value; // Cập nhật nội dung label từ input
-                    label.classList.remove('hidden');
-                    input.classList.add('hidden');
-                    editBtn.classList.remove('hidden');
-                    saveBtn.classList.add('hidden');
-                }
-            });
-
-
-            // Xử lý sự kiện khi nhấn nút "Đề xuất KSAO"
-            suggestKSAOBtn.addEventListener('click', async () => {
-                const selectedActions = [];
-                actionsContainer.querySelectorAll('input[type="checkbox"]:checked').forEach(checkbox => {
-                    const actionDiv = checkbox.closest('div');
-                    const actionText = actionDiv.querySelector('label').textContent.trim(); // Lấy từ label đã được cập nhật
-                    selectedActions.push(actionText);
-                });
-
-                if (selectedActions.length > 0) {
-                    setLoadingState(suggestKSAOBtn, ksaoBtnText, ksaoSpinner, true);
-                    ksaoResultsContainer.innerHTML = ''; // Xóa kết quả KSAO cũ
-                    ksaoOutputSection.classList.add('hidden'); // Hide section during loading
-
-                    for (const action of selectedActions) {
-                        const suggestedKSAO = await suggestKSAOWithAI(action);
-
-                        const actionTitle = document.createElement('h4');
-                        actionTitle.className = 'text-xl font-semibold text-dark-blue-2 mt-4 mb-2 border-b border-gray-200 pb-1';
-                        actionTitle.textContent = `Hành động: ${action}`;
-                        ksaoResultsContainer.appendChild(actionTitle);
-
-                        const ksaoTable = document.createElement('table');
-                        ksaoTable.className = 'min-w-full bg-white border border-gray-300 rounded-lg shadow-sm';
-                        ksaoTable.innerHTML = `
-                            <thead class="bg-gray-100 text-dark-blue-1">
-                                <tr>
-                                    <th class="py-2 px-3 text-left text-sm font-semibold uppercase">Loại</th>
-                                    <th class="py-2 px-3 text-left text-sm font-semibold uppercase">Yêu cầu KSAO</th>
-                                    <th class="py-2 px-3 text-left text-sm font-semibold uppercase">Hành động</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-gray-200">
-                            </tbody>
-                        `;
-                        const tbody = ksaoTable.querySelector('tbody');
-
-                        // Duyệt qua từng loại KSAO và thêm vào bảng
-                        ['K', 'S', 'A', 'O'].forEach(type => {
-                            if (suggestedKSAO[type] && suggestedKSAO[type].length > 0) {
-                                suggestedKSAO[type].forEach(req => {
-                                    const row = document.createElement('tr');
-                                    row.className = 'hover:bg-gray-50';
-                                    row.innerHTML = `
-                                        <td class="py-2 px-3 text-sm font-semibold text-green-primary">${type}</td>
-                                        <td class="py-2 px-3 text-sm">
-                                            <textarea class="w-full p-1 border border-gray-200 rounded-md text-sm" rows="2">${req}</textarea>
-                                        </td>
-                                        <td class="py-2 px-3 text-sm flex items-center">
-                                            <button class="save-ksao-btn bg-green-primary text-white text-xs py-1 px-2 rounded-md hover:bg-green-700 transition duration-200">Lưu</button>
-                                            <span class="save-feedback">Đã lưu!</span>
-                                        </td>
-                                    `;
-                                    tbody.appendChild(row);
-                                });
-                            }
-                        });
-                        ksaoResultsContainer.appendChild(ksaoTable);
-                    }
-                    ksaoOutputSection.classList.remove('hidden'); // Hiển thị phần kết quả KSAO
-                    // Cuộn đến phần kết quả KSAO
-                    ksaoOutputSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    setLoadingState(suggestKSAOBtn, ksaoBtnText, ksaoSpinner, false);
-
-                } else {
-                    console.log('Vui lòng chọn ít nhất một hành động để đề xuất KSAO.');
-                    // Có thể thêm một thông báo tùy chỉnh trên UI nếu cần
-                }
-            });
-
-            // Ủy quyền sự kiện cho các nút "Lưu" KSAO (đặt ngoài sự kiện click của suggestKSAOBtn)
-            ksaoResultsContainer.addEventListener('click', (e) => {
-                if (e.target.classList.contains('save-ksao-btn')) {
-                    const row = e.target.closest('tr');
-                    const textarea = row.querySelector('textarea');
-                    const feedbackSpan = row.querySelector('.save-feedback');
-
-                    // Trong ứng dụng thực tế, bạn sẽ lưu textarea.value vào backend
-                    console.log('KSAO Saved:', textarea.value);
-
-                    // Hiển thị feedback
-                    if (feedbackSpan) {
-                        feedbackSpan.classList.add('show');
-                        setTimeout(() => {
-                            feedbackSpan.classList.remove('show');
-                        }, 2000); // Ẩn sau 2 giây
-                    }
-                }
-            });
-        });
-    </script>
-</body>
-</html>
->>>>>>> d25b5174788d232d7bf455880b2272efb9f57da0
