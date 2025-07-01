@@ -1,0 +1,10 @@
+*.exe
+# Bỏ qua tất cả các tệp .exe
+*.exe
+
+# Bỏ qua thư mục node_modules (thường dùng trong dự án JS)
+node_modules/
+
+# Bỏ qua các tệp tạm thời của hệ điều hành
+.DS_Store
+Thumbs.db
